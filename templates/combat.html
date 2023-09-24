@@ -1,0 +1,56 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <!-- link de base -->
+    <link rel="stylesheet" href="{% static 'css/styles.css' %}">
+    <link rel="stylesheet" href="{% static 'css/bootstrap.min.css' %}">
+    <link rel="stylesheet" href="{% static 'css/fontawesome-all.min.css' %}">
+    <script src="{% static 'js/bootstrap.bundle.min.js' %}"></script>
+    <!-- Titre -->
+    <title>House of tanks</title>
+</head>
+<body>
+<header>
+    <h1 class="text-center">House of tanks : {{ username }}</h1>
+</header>
+
+<div class="container">
+  <div class="row">
+    <div class="col-4">
+        <p>Ip adress : {{ ip }}</p>
+    </div>
+    <div class="col-5">
+        Camera :
+    </div>
+    <div class="col-3">
+        <table class="table table-bordered">
+            <thead>
+                <tr>
+                    <th>Nom</th>
+                    <th>Degats</th>
+                    <th>Cadence (tir/s)</th>
+                    <th>Portée</th>
+                    <th>Durabilitée</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for weapon in weapon_list %}
+                    <tr>
+                        <td>{{ weapon.nom }}</td>
+                        <td>{{ weapon.degats }}</td>
+                        <td>{{ weapon.cadence }}</td>
+                        <td>{{ weapon.portee }}</td>
+                        <td>{{ weapon.durabilite }}</td>
+                        <td><button class="button">Buy</button></td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+  </div>
+</div>
+</body>
+</html>
