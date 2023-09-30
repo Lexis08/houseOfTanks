@@ -1,9 +1,0 @@
-[
-  {"nom": "gun","degats": 50,"cadence": 2,"portee": 2,"durabilite": 3},
-  {"nom": "mitraillete","degats": 30,"cadence": 50,"portee": 5,"durabilite": 7},
-  {"nom": "lances-grenades","degats": 100,"cadence": 1,"portee": 5,"durabilite": 8},
-  {"nom": "lances-missiles","degats": 150,"cadence": 1,"portee": 5,"durabilite": 8},
-  {"nom": "lances-flammes","degats": 40,"cadence": 50,"portee": 5,"durabilite": 8},
-  {"nom": "laser","degats": 50,"cadence": 50,"portee": 5,"durabilite": 5},
-  {"nom": "fusil","degats": 50,"cadence": 3,"portee": 5,"durabilite": 8}
-]

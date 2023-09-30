@@ -2,4 +2,13 @@
 *
 {
   font-family: 'Quicksand', sans-serif;
+  color: white;
+}
+
+body {
+  background-image: url("../background-612x612-2.jpg");
+}
+
+.card {
+  background-color: #5daf65 !important;
 }

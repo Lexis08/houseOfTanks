@@ -15,42 +15,119 @@
 <header>
     <h1 class="text-center">House of tanks : {{ username }}</h1>
 </header>
-
 <div class="container">
-  <div class="row">
-    <div class="col-4">
-        <p>Ip adress : {{ ip }}</p>
+    <div class="row">
+        <div class="col">
+            <div class="card center">
+                <h5 class="card-title text-center">Tank Infos</h5>
+                <div class="card-body">
+                    <p class="card-text">Ip adress : {{ ip }}</p>
+                    <p class="card-text">Pv : {{ tank.pv }}, Shield : {{ tank.shield }}</p>
+                    <p class="card-text">Point de movement : {{ tank.move }}</p>
+                    <table>
+                        <tbody>
+                        <tr>
+                            <td></td>
+                            <td>
+                                <form method="get">
+                                    <button class="btn btn-secondary fa-solid fa-arrow-up"></button>
+                                    <input type="hidden" name="move" value="up">
+                                </form>
+                            </td>
+                            <td></td>
+                        </tr>
+                        <tr>
+                            <td>
+                                <form method="get">
+                                    <button class="btn btn-secondary fa-solid fa-arrow-left"></button>
+                                    <input type="hidden" name="move" value="left">
+                                </form>
+                            </td>
+                            <td>
+                                <form method="get">
+                                    <button class="btn btn-secondary fa-solid fa-circle-stop"></button>
+                                    <input type="hidden" name="move" value="stop">
+                                </form>
+                            </td>
+                            <td>
+                                <form method="get">
+                                    <button class="btn btn-secondary fa-solid fa-arrow-right"></button>
+                                    <input type="hidden" name="move" value="right">
+                                </form>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td></td>
+                            <td>
+                                <form method="get">
+                                    <button class="btn btn-secondary fa-solid fa-arrow-down"></button>
+                                    <input type="hidden" name="move" value="down">
+                                </form>
+                            </td>
+                            <td></td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        <div class="col">
+            <div class="card center">
+                <h5 class="card-title text-center">Camera</h5>
+                <div class="card-body">
+                    <p class="card-text">Voici votre vue</p>
+                </div>
+            </div>
+        </div>
+        <div class="col">
+            <div class="card">
+                <h5 class="card-title text-center">Arme</h5>
+                <div class="card-body">
+                    <p>Argent : {{ tank.argent }}</p>
+                    <p>Votre arme : {{ tank.weapon_selected.nom }}</p>
+                    <table class="table table-bordered">
+                        <thead>
+                        <tr>
+                            <th>Nom</th>
+                            <th>Degats</th>
+                            <th>Cadence (tir/s)</th>
+                            <th>Portée</th>
+                            <th>Durabilitée</th>
+                            <th>Prix</th>
+                            <th></th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        {% for weapon in tank.weapon_list %}
+                            <tr>
+                                <td>{{ weapon.nom }}</td>
+                                <td>{{ weapon.degats }}</td>
+                                <td>{{ weapon.cadence }}</td>
+                                <td>{{ weapon.portee }}</td>
+                                <td>{{ weapon.durabilite }}</td>
+                                <td>{{ weapon.price }}</td>
+                                <td>
+                                    {% if weapon.nom != tank.weapon_selected.nom %}
+                                    <form method="post" onsubmit="">
+                                        {% csrf_token %}
+                                        <input class="form-control m-2" type="hidden"
+                                               placeholder="price" name="price" value="{{ weapon.price }}">
+                                        <input class="form-control m-2" type="hidden"
+                                               placeholder="nom" name="nom" value="{{ weapon.nom }}">
+                                        <button class="btn btn-outline-secondary" type="submit">Buy</button>
+                                    </form>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                        {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
     </div>
-    <div class="col-5">
-        Camera :
-    </div>
-    <div class="col-3">
-        <table class="table table-bordered">
-            <thead>
-                <tr>
-                    <th>Nom</th>
-                    <th>Degats</th>
-                    <th>Cadence (tir/s)</th>
-                    <th>Portée</th>
-                    <th>Durabilitée</th>
-                    <th></th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for weapon in weapon_list %}
-                    <tr>
-                        <td>{{ weapon.nom }}</td>
-                        <td>{{ weapon.degats }}</td>
-                        <td>{{ weapon.cadence }}</td>
-                        <td>{{ weapon.portee }}</td>
-                        <td>{{ weapon.durabilite }}</td>
-                        <td><button class="button">Buy</button></td>
-                    </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    </div>
-  </div>
 </div>
 </body>
+<script>
+</script>
 </html>
