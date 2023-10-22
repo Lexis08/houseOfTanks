@@ -50,29 +50,29 @@ class IndexView(TemplateView):
         broker_port = config["BROKER"]["PORT"]
         print(broker_host, '', broker_port)
 
-        # Connection
-        broker = stomp.Connection([(broker_host, broker_port)], heartbeats=(30000, 30000))
-        broker.connect(config["BROKER"]["USERNAME"], config["BROKER"]["PASSWORD"], wait=True)
 
         # Move
         if move:
+            # Connection
+            broker = stomp.Connection([(broker_host, broker_port)], heartbeats=(30000, 30000))
+            broker.connect(config["BROKER"]["USERNAME"], config["BROKER"]["PASSWORD"], wait=True)
             message = None
             if move == "up":
                 message = {"direction": "FORWARD"}
             elif move == "left":
-                message = {"direction": "FORWARD"}
+                message = {"direction": "LEFT"}
             elif move == "right":
-                message = {"direction": "FORWARD"}
+                message = {"direction": "RIGHT"}
             elif move == "down":
-                message = {"direction": "FORWARD"}
+                message = {"direction": "BACKWARD"}
             elif move == "stop":
                 message = {"direction": "NONE"}
 
             broker.send(destination=config["BROKER"]["MOTOR_LISTEN_QUEUE"],
                         headers={"type": config["MOTOR"]["MESSAGE_TYPE_DIRECTION"]},
                         body=json.dumps(message))
+            broker.disconnect()
 
-        broker.disconnect()
 
         context = {
             "username": username,
