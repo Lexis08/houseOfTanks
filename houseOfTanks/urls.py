@@ -18,9 +18,15 @@ from django.contrib import admin
 from django.urls import path
 from .views.combat_views import IndexView
 from .views.log_views import LogView
+from .views.combat_views import move, stop, shoot, save_websocket_sid
 
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('', LogView.as_view()),
     path('combat', IndexView.as_view()),
+    # Ajax endpoints
+    path('move', move),
+    path('stop', stop),
+    path('shoot', shoot),
+    path('save_websocket_sid', save_websocket_sid),
 ]

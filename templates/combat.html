@@ -24,6 +24,11 @@
                     <p class="card-text">Ip adress : {{ ip }}</p>
                     <p class="card-text">Pv : {{ tank.pv }}, Shield : {{ tank.shield }}</p>
                     <p class="card-text">Point de movement : {{ tank.move }}</p>
+
+                    <!-- Test -->
+                    <button class="btn btn-secondary fa-solid fa-arrow-up" onmousedown="sendMove('up')" onmouseup="sendStop()"></button>
+                    <button class="btn btn-secondary" onclick="sendShoot()">shoot</button>
+
                     <table>
                         <tbody>
                         <tr>
@@ -133,6 +138,44 @@
     </div>
 </div>
 </body>
+<script src="https://cdn.socket.io/4.4.1/socket.io.min.js"></script>
 <script>
+    // AJAX
+    function sendMove(move) {
+        let xhr = new XMLHttpRequest();
+        xhr.open('GET', '/move?move=' + move);
+        xhr.send();
+    }
+
+    function sendStop() {
+        let xhr = new XMLHttpRequest();
+        xhr.open('GET', '/stop');
+        xhr.send();
+    }
+
+    function sendShoot() {
+        let xhr = new XMLHttpRequest();
+        xhr.open('GET', '/shoot');
+        xhr.send();
+    }
+
+    // WEBSOCKET
+    function saveWebsocketSessionId() {
+        let xhr = new XMLHttpRequest();
+        xhr.open('GET', '/save_websocket_sid');
+        xhr.send();
+    }
+
+    const socket = io.connect("http://127.0.0.1:3000");
+    socket.on("connection", function (data) {
+        const data_as_json = JSON.parse(data);
+        document.cookie = "websocket_sid=" + data_as_json.sid;
+        saveWebsocketSessionId();
+    });
+
+    socket.on("shoot_result", function (evt) {
+        console.log("shoot_result : Message recu : ");
+        console.log(evt);
+    });
 </script>
 </html>

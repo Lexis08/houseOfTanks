@@ -5,6 +5,57 @@ import configparser
 import stomp
 import random
 
+#################################################
+# AJAX
+#################################################
+from django.http import JsonResponse
+def move(request):
+    print("===> move")
+    print(request.GET.get('move'))
+    return JsonResponse({"result": "ok"})
+
+def stop(request):
+    print("===> stop")
+    return JsonResponse({"result": "ok"})
+
+#################################################
+# WEBSOCKET
+#################################################
+import requests
+
+ip_websocket_sid_dict = {}
+
+def save_websocket_sid(request):
+    print("===> save_websocket_sid")
+    ip_websocket_sid_dict[request.COOKIES.get('ip')] = request.COOKIES.get('websocket_sid')
+    print(f"ip_websocket_sid_dict : {ip_websocket_sid_dict}")
+    return JsonResponse({"result": "ok"})
+
+def shoot(request):
+    #TODO envoyer un message "tag" sur le broker
+    print("===> shoot")
+    #FIXME a supprimer
+    receive_tag_result()
+    return JsonResponse({"result": "ok"})
+
+#FIXME a remplacer par une ecoute sur le broker
+def receive_tag_result():
+    print("===> receive_tag_result")
+
+    src_ip = '192.168.1.152'
+    target_ip = '192.168.1.154'
+    data = {
+        'src_ip': src_ip,
+        'src_sid': ip_websocket_sid_dict[src_ip],
+        'target_ip': target_ip,
+        'target_sid': ip_websocket_sid_dict[target_ip],
+        'result': 'hit'
+    }
+    print(data)
+
+    requests.post('http://127.0.0.1:3000/dispatch_shoot_result', json=data)
+
+#################################################
 
 def get_config():
     config = configparser.ConfigParser()
