@@ -15,12 +15,14 @@ class LogView(TemplateView):
 
         # Parametre
         username = request.POST.get('username')
-        ip = request.POST.get('ip')
+        ip_adress = request.POST.get('ip_adress')
+        tid = request.POST.get('tid')
 
         # response = HttpResponse('hello')
         response = redirect("/combat")
         response.set_cookie("username", username)
-        response.set_cookie("ip", ip)
+        response.set_cookie("ip_adress", ip_adress)
+        response.set_cookie("tid", tid)
 
         return response
 

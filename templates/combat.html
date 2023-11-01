@@ -13,7 +13,7 @@
 </head>
 <body>
 <header>
-    <h1 class="text-center">House of tanks : {{ username }}</h1>
+    <h1 class="text-center">House of tanks : {{ tank.username }}</h1>
 </header>
 <div class="container">
     <div class="row">
@@ -21,9 +21,9 @@
             <div class="card center">
                 <h5 class="card-title text-center">Tank Infos</h5>
                 <div class="card-body">
-                    <p class="card-text">Ip adress : {{ ip }}</p>
+                    <p class="card-text">Ip adress : {{ tank.ip_adress }}</p>
+                    <p class="card-text">Tank ID : {{ tank.tid }}</p>
                     <p class="card-text">Pv : {{ tank.pv }}, Shield : {{ tank.shield }}</p>
-                    <p class="card-text">Point de movement : {{ tank.move }}</p>
                     <table>
                         <tbody>
                         <tr>
@@ -86,9 +86,11 @@
         </div>
         <div class="col">
             <div class="card">
-                <h5 class="card-title text-center">Arme</h5>
+                <h5 class="card-title text-center">Magasin</h5>
                 <div class="card-body">
+                    <!--Argent-->
                     <p>Argent : {{ tank.money }}</p>
+                    <!--Arme-->
                     <p>Votre arme : {{ tank.weapon_selected.nom }}</p>
                     <table class="table table-bordered">
                         <thead>
@@ -98,6 +100,7 @@
                             <th>Cadence (tir/s)</th>
                             <th>Portée</th>
                             <th>Durabilitée</th>
+                            <th>Precision</th>
                             <th>Prix</th>
                             <th></th>
                         </tr>
@@ -110,6 +113,7 @@
                                 <td>{{ weapon.cadence }}</td>
                                 <td>{{ weapon.portee }}</td>
                                 <td>{{ weapon.durabilite }}</td>
+                                <td>{{ weapon.precision }}</td>
                                 <td>{{ weapon.price }}</td>
                                 <td>
                                     {% if weapon.nom != tank.weapon_selected.nom %}
@@ -127,6 +131,24 @@
                         {% endfor %}
                         </tbody>
                     </table>
+                    <!--Bouclier-->
+                    <p>Votre bouclier : {{ tank.shield_selected.nom }}</p>
+                        <table class="table table-bordered">
+                            <thead>
+                            <tr>
+                                <th>Nom</th>
+                                <th>Valeur</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            {% for weapon in tank.weapon_list %}
+                                <tr>
+                                    <td>{{ weapon.nom }}</td>
+                                    <td>{{ weapon.valeur }}</td>
+                                </tr>
+                            {% endfor %}
+                            </tbody>
+                        </table>
                 </div>
             </div>
         </div>

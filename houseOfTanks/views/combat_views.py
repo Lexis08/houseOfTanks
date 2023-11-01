@@ -20,7 +20,9 @@ class Tank:
 
     def __init__(self):
         # self.move = 3
-
+        self.username = None
+        self.ip_adress = None
+        self.tid = None
         self.weapon_selected = ""
         self.pv = 1000
         self.shield = 0
@@ -47,17 +49,19 @@ class IndexView(TemplateView):
     def get(self, request, *args, **kwargs):
 
         # Variables
-        username = request.COOKIES.get('username')
-        broker_host = request.COOKIES.get('ip')
+        self.tank.username = request.COOKIES.get('username')
+        self.tank.ip_adress = request.COOKIES.get('ip_adress')
+        self.tank.tid = request.COOKIES.get('tid')
         move = request.GET.get('move')
         broker_port = config["BROKER"]["PORT"]
-        print('broker_host :', broker_host, 'broker_port :', broker_port)
+        print('broker_host :', self.tank.ip_adress, 'broker_port :', broker_port)
+
 
 
         # Move
         if move:
             # Connection
-            broker = stomp.Connection([(broker_host, broker_port)], heartbeats=(30000, 30000))
+            broker = stomp.Connection([(self.tank.ip_adress, broker_port)], heartbeats=(30000, 30000))
             broker.connect(config["BROKER"]["USERNAME"], config["BROKER"]["PASSWORD"], wait=True)
             message = None
             if move == "up":
@@ -90,8 +94,6 @@ class IndexView(TemplateView):
                 print(self.tank.location)"""
 
         context = {
-            "username": username,
-            "ip": broker_host,
             "tank": self.tank,
         }
         return render(request, self.template_name, context)
