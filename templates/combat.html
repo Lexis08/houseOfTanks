@@ -68,6 +68,11 @@
                         </tr>
                         </tbody>
                     </table>
+                    <form method="post">
+                        {% csrf_token %}
+                        <button class="btn btn-secondary">SHOT</button>
+                        <input type="hidden" placeholder="shot" name="shot" value="shot">
+                    </form>
                 </div>
             </div>
         </div>
@@ -83,7 +88,7 @@
             <div class="card">
                 <h5 class="card-title text-center">Arme</h5>
                 <div class="card-body">
-                    <p>Argent : {{ tank.argent }}</p>
+                    <p>Argent : {{ tank.money }}</p>
                     <p>Votre arme : {{ tank.weapon_selected.nom }}</p>
                     <table class="table table-bordered">
                         <thead>
