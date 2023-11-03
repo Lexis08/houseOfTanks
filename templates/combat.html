@@ -24,61 +24,39 @@
                     <p class="card-text">Ip adress : {{ tank.ip_adress }}</p>
                     <p class="card-text">Tank ID : {{ tank.tid }}</p>
                     <p class="card-text">Pv : {{ tank.pv }}, Shield : {{ tank.shield }}</p>
-                    <p class="card-text">Point de movement : {{ tank.move }}</p>
-
-                    <!-- Test -->
-                    <button class="btn btn-secondary fa-solid fa-arrow-up" onmousedown="sendMove('up')" onmouseup="sendStop()"></button>
-                    <button class="btn btn-secondary" onclick="sendShoot()">shoot</button>
-
                     <table>
                         <tbody>
                         <tr>
                             <td></td>
                             <td>
-                                <form method="get">
-                                    <button class="btn btn-secondary fa-solid fa-arrow-up"></button>
-                                    <input type="hidden" name="move" value="up">
-                                </form>
+                                <button class="btn btn-secondary fa-solid fa-arrow-up" onmousedown="sendMove('up')" onmouseup="sendStop()"></button>
                             </td>
                             <td></td>
                         </tr>
                         <tr>
                             <td>
-                                <form method="get">
-                                    <button class="btn btn-secondary fa-solid fa-arrow-left"></button>
-                                    <input type="hidden" name="move" value="left">
-                                </form>
+                                <button class="btn btn-secondary fa-solid fa-arrow-left" onmousedown="sendMove('left')" onmouseup="sendStop()"></button>
                             </td>
+                            <td></td>
                             <td>
-                                <form method="get">
-                                    <button class="btn btn-secondary fa-solid fa-circle-stop"></button>
-                                    <input type="hidden" name="move" value="stop">
-                                </form>
-                            </td>
-                            <td>
-                                <form method="get">
-                                    <button class="btn btn-secondary fa-solid fa-arrow-right"></button>
-                                    <input type="hidden" name="move" value="right">
-                                </form>
+                                <button class="btn btn-secondary fa-solid fa-arrow-right" onmousedown="sendMove('right')" onmouseup="sendStop()"></button>
                             </td>
                         </tr>
                         <tr>
                             <td></td>
                             <td>
-                                <form method="get">
-                                    <button class="btn btn-secondary fa-solid fa-arrow-down"></button>
-                                    <input type="hidden" name="move" value="down">
-                                </form>
+                                <button class="btn btn-secondary fa-solid fa-arrow-down" onmousedown="sendMove('down')" onmouseup="sendStop()"></button>
                             </td>
                             <td></td>
                         </tr>
                         </tbody>
                     </table>
-                    <form method="post">
-                        {% csrf_token %}
-                        <button class="btn btn-secondary">SHOT</button>
-                        <input type="hidden" placeholder="shot" name="shot" value="shot">
-                    </form>
+                    <br>
+                    <!-- Shot -->
+                    <button class="btn btn-secondary" onclick="sendShoot()">SHOOT</button>
+                    <!-- Msg -->
+                    <h5>Messages</h5>
+                    <div id="msg"></div>
                 </div>
             </div>
         </div>
@@ -123,12 +101,12 @@
                                 <td>{{ weapon.price }}</td>
                                 <td>
                                     {% if weapon.nom != tank.weapon_selected.nom %}
-                                    <form method="post" onsubmit="">
+                                    <form method="post">
                                         {% csrf_token %}
                                         <input class="form-control m-2" type="hidden"
-                                               placeholder="price" name="price" value="{{ weapon.price }}">
+                                               placeholder="price_weapon" name="price_weapon" value="{{ weapon.price }}">
                                         <input class="form-control m-2" type="hidden"
-                                               placeholder="nom" name="nom" value="{{ weapon.nom }}">
+                                               placeholder="weapon_nom" name="weapon_nom" value="{{ weapon.nom }}">
                                         <button class="btn btn-outline-secondary" type="submit">Buy</button>
                                     </form>
                                     {% endif %}
@@ -144,13 +122,28 @@
                             <tr>
                                 <th>Nom</th>
                                 <th>Valeur</th>
+                                <th>Prix</th>
+                                <th></th>
                             </tr>
                             </thead>
                             <tbody>
-                            {% for weapon in tank.weapon_list %}
+                            {% for shield in tank.shield_list %}
                                 <tr>
-                                    <td>{{ weapon.nom }}</td>
-                                    <td>{{ weapon.valeur }}</td>
+                                    <td>{{ shield.nom }}</td>
+                                    <td>{{ shield.valeur }}</td>
+                                    <td>{{ shield.price }}</td>
+                                    <td>
+                                    {% if shield.nom != tank.shield_selected.nom %}
+                                    <form method="post">
+                                        {% csrf_token %}
+                                        <input class="form-control m-2" type="hidden"
+                                               placeholder="price_shield" name="price_shield" value="{{ shield.price }}">
+                                        <input class="form-control m-2" type="hidden"
+                                               placeholder="nom" name="shield_nom" value="{{ shield.nom }}">
+                                        <button class="btn btn-outline-secondary" type="submit">Buy</button>
+                                    </form>
+                                    {% endif %}
+                                    </td>
                                 </tr>
                             {% endfor %}
                             </tbody>
@@ -182,23 +175,33 @@
         xhr.send();
     }
 
-    // WEBSOCKET
-    function saveWebsocketSessionId() {
+    function sendBuyWeapon(price_weapon, weapon_name) {
         let xhr = new XMLHttpRequest();
-        xhr.open('GET', '/save_websocket_sid');
+        xhr.open('GET', '/buy_weapon?price_weapon=' + price_weapon, '&weapon_name=' + weapon_name);
         xhr.send();
     }
 
+    function sendBuyShield(price_shield, shield_name) {
+        let xhr = new XMLHttpRequest();
+        xhr.open('GET', '/buy_shield?price_shield=' + price_shield, '&shield_name=' + shield_name);
+        xhr.send();
+    }
+
+    // WEBSOCKET
     const socket = io.connect("http://127.0.0.1:3000");
     socket.on("connection", function (data) {
         const data_as_json = JSON.parse(data);
         document.cookie = "websocket_sid=" + data_as_json.sid;
-        saveWebsocketSessionId();
+        let xhr = new XMLHttpRequest();
+        xhr.open('GET', '/save_websocket_sid');
+        xhr.send();
     });
 
-    socket.on("shoot_result", function (evt) {
-        console.log("shoot_result : Message recu : ");
-        console.log(evt);
+    socket.on("shoot_result", function (msg) {
+        {#console.log("shoot_result : Message recu : ");#}
+        {#console.log(msg);#}
+        var div_msg = document.getElementById('msg');
+        div_msg.innerHTML += msg;
     });
 </script>
 </html>

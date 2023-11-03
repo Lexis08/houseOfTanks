@@ -5,53 +5,129 @@ import configparser
 import stomp
 import random
 
+tid_to_tank_dict = {}
+
 #################################################
 # AJAX
 #################################################
 from django.http import JsonResponse
 def move(request):
     print("===> move")
-    print(request.GET.get('move'))
+    tank = tid_to_tank_dict[request.COOKIES.get('tid')]
+    direction = request.GET.get('move')
+    message = None
+    if direction == "up":
+        message = {"direction": "FORWARD"}
+    elif direction == "left":
+        message = {"direction": "LEFT"}
+    elif direction == "right":
+        message = {"direction": "RIGHT"}
+    elif direction == "down":
+        message = {"direction": "BACKWARD"}
+
+    tank.broker.send(destination=config["BROKER"]["MOTOR_LISTEN_TOPIC"],
+                headers={"type": config["MOTOR"]["MESSAGE_TYPE_DIRECTION"]},
+                body=json.dumps(message))
     return JsonResponse({"result": "ok"})
 
 def stop(request):
     print("===> stop")
+    tank = tid_to_tank_dict[request.COOKIES.get('tid')]
+    message = {"direction": "NONE"}
+    tank.broker.send(destination=config["BROKER"]["MOTOR_LISTEN_TOPIC"],
+                headers={"type": config["MOTOR"]["MESSAGE_TYPE_DIRECTION"]},
+                body=json.dumps(message))
     return JsonResponse({"result": "ok"})
+
+def buy_weapon(request):
+    tank = tid_to_tank_dict[request.COOKIES.get('tid')]
+    price_weapon = request.GET.get('price_weapon')
+    weapon_name = request.GET.get('weapon_name')
+    if int(tank.money) >= int(price_weapon):
+        tank.money -= int(price_weapon)
+        tank.weapon_selected = tank.choice_item(tank.weapon_list, weapon_name)
+        print('Weapon :', tank.weapon_selected)
+    else:
+        print("Vous n'avez pas assez d'argent")
+
+def buy_shield(request):
+    tank = tid_to_tank_dict[request.COOKIES.get('tid')]
+    price_shield = request.GET.get('price_shield')
+    shield_name = request.GET.get('shield_name')
+    if int(tank.money) >= int(price_shield):
+        tank.money -= int(price_shield)
+        tank.shield_selected = tank.choice_item(tank.shield_list, shield_name)
+        print('Shield :', tank.shield_selected)
+    else:
+        print("Vous n'avez pas assez d'argent")
 
 #################################################
 # WEBSOCKET
 #################################################
 import requests
 
-ip_websocket_sid_dict = {}
-
 def save_websocket_sid(request):
     print("===> save_websocket_sid")
-    ip_websocket_sid_dict[request.COOKIES.get('ip')] = request.COOKIES.get('websocket_sid')
-    print(f"ip_websocket_sid_dict : {ip_websocket_sid_dict}")
+
+    # print(type(request.COOKIES.get('tid')))
+    print(tid_to_tank_dict)
+
+    tank = tid_to_tank_dict[request.COOKIES.get('tid')]
+    tank.sid = request.COOKIES.get('websocket_sid')
+    print(f"SID : {tank.sid}")
     return JsonResponse({"result": "ok"})
 
-def shoot(request):
-    #TODO envoyer un message "tag" sur le broker
-    print("===> shoot")
-    #FIXME a supprimer
-    receive_tag_result()
+def shot_detection_request(request):
+    tank = tid_to_tank_dict[request.COOKIES.get('tid')]
+    if tank.weapon_selected:
+        #TODO envoyer un message "tag" sur le broker
+        print("===> Marker detection request")
+        #FIXME a supprimer
+        shot_detection_response(request)
+    else:
+        print('===> Choice a weapon')
     return JsonResponse({"result": "ok"})
 
-#FIXME a remplacer par une ecoute sur le broker
-def receive_tag_result():
-    print("===> receive_tag_result")
+#TODO si reponse broker
+def shot_detection_response(response_broker): # Quand broker envoit une reponse
 
-    src_ip = '192.168.1.152'
-    target_ip = '192.168.1.154'
-    data = {
-        'src_ip': src_ip,
-        'src_sid': ip_websocket_sid_dict[src_ip],
-        'target_ip': target_ip,
-        'target_sid': ip_websocket_sid_dict[target_ip],
-        'result': 'hit'
+    response = {
+        "action": 'SHOOT',
+        "src_tid": 2,
+        "target_tid": 1,
+        "face": 0
     }
-    print(data)
+
+    print("===> Receive tag result")
+    print(tid_to_tank_dict)
+    tank = tid_to_tank_dict[str(response['src_tid'])]
+
+    # Verifie si target
+    if response['target_tid']:
+        target_tank = tid_to_tank_dict[str(response['target_tid'])]
+        # Tir
+        shooting_chance = random.randint(0, 100)
+        if shooting_chance > tank.weapon_selected['precision']:
+            print('Shot missed')
+            data = {
+                'src_sid': tank.sid,
+                'target_sid': '',
+                'src_msg': 'Shot missed'
+            }
+        else:
+            print('Shot successful')
+            data = {
+                'src_sid': tank.sid,
+                'target_sid': target_tank.sid,
+                'src_msg': 'Shot successful',
+                'target_msg': '-30'
+            }
+    else:
+        data = {
+            'src_sid': tank.sid,
+            'target_sid': '',
+            'src_msg': 'No tank'
+        }
 
     requests.post('http://127.0.0.1:3000/dispatch_shoot_result', json=data)
 
@@ -70,14 +146,18 @@ config = get_config()
 class Tank:
 
     def __init__(self):
-        # self.move = 3
+        # User
         self.username = None
         self.ip_adress = None
         self.tid = None
-        self.weapon_selected = ""
+        self.broker = None
+        self.sid = None
+        # Ojet Tank
+        self.weapon_selected = None
+        self.shield_selected = None
         self.pv = 1000
         self.shield = 0
-        self.power = ""
+        self.power = None
         self.money = 5000
         self.location = [0, 0]
 
@@ -86,11 +166,15 @@ class Tank:
             self.weapon_list = json.loads(data_as_string)
             file.close()
 
-    def choice_weapon(self, weapon_name):
-        for weapon in self.weapon_list:
-            if weapon['nom'] == weapon_name:
-                self.weapon_selected = weapon.copy()
-                break
+        with open("static/shield.json", 'r+') as file:
+            data_as_string = file.read()
+            self.shield_list = json.loads(data_as_string)
+            file.close()
+
+    def choice_item(self, item_list, item_name):
+        for item in item_list:
+            if item['nom'] == item_name:
+                return item.copy()
 
 
 class IndexView(TemplateView):
@@ -99,50 +183,19 @@ class IndexView(TemplateView):
 
     def get(self, request, *args, **kwargs):
 
+        # Ajout du tank au dict
+        tid_to_tank_dict[self.tank.tid] = self.tank
+
         # Variables
         self.tank.username = request.COOKIES.get('username')
         self.tank.ip_adress = request.COOKIES.get('ip_adress')
         self.tank.tid = request.COOKIES.get('tid')
-        move = request.GET.get('move')
         broker_port = config["BROKER"]["PORT"]
         print('broker_host :', self.tank.ip_adress, 'broker_port :', broker_port)
 
-
-
-        # Move
-        if move:
-            # Connection
-            broker = stomp.Connection([(self.tank.ip_adress, broker_port)], heartbeats=(30000, 30000))
-            broker.connect(config["BROKER"]["USERNAME"], config["BROKER"]["PASSWORD"], wait=True)
-            message = None
-            if move == "up":
-                message = {"direction": "FORWARD"}
-            elif move == "left":
-                message = {"direction": "LEFT"}
-            elif move == "right":
-                message = {"direction": "RIGHT"}
-            elif move == "down":
-                message = {"direction": "BACKWARD"}
-            elif move == "stop":
-                message = {"direction": "NONE"}
-
-            broker.send(destination=config["BROKER"]["MOTOR_LISTEN_TOPIC"],
-                        headers={"type": config["MOTOR"]["MESSAGE_TYPE_DIRECTION"]},
-                        body=json.dumps(message))
-            broker.disconnect()
-
-            """if move == "up":
-                self.tank.location[1] += 1
-                print(self.tank.location)
-            elif move == "left":
-                self.tank.location[0] -= 1
-                print(self.tank.location)
-            elif move == "right":
-                self.tank.location[0] += 1
-                print(self.tank.location)
-            elif move == "down":
-                self.tank.location[1] -= 1
-                print(self.tank.location)"""
+        # Connection
+        # self.tank.broker = stomp.Connection([(self.tank.ip_adress, broker_port)], heartbeats=(30000, 30000))
+        # self.tank.broker.connect(config["BROKER"]["USERNAME"], config["BROKER"]["PASSWORD"], wait=True)
 
         context = {
             "tank": self.tank,
@@ -151,27 +204,30 @@ class IndexView(TemplateView):
 
     def post(self, request, *args, **kwargs):
 
-        price = request.POST.get('price')
-        weapon_name = request.POST.get('nom')
-        shot = request.POST.get('shot')
+        # Parameters
+        price_weapon = request.POST.get('price_weapon')
+        price_shield = request.POST.get('price_shield')
+        weapon_name = request.POST.get('weapon_nom')
+        shield_name = request.POST.get('shield_nom')
 
         response = redirect("/combat")
 
-        # --> Achat
-        if price:
-            if int(self.tank.money) >= int(price):
-                self.tank.money -= int(price)
-                self.tank.choice_weapon(weapon_name)
-                print('Weapon : ', self.tank.weapon_selected)
+        # --> Achat arme
+        if price_weapon:
+            if int(self.tank.money) >= int(price_weapon):
+                self.tank.money -= int(price_weapon)
+                self.tank.weapon_selected = self.tank.choice_item(self.tank.weapon_list, weapon_name)
+                print('Weapon :', self.tank.weapon_selected)
             else:
                 print("Vous n'avez pas assez d'argent")
-
-        if shot:
-            shooting_chance = random.randint(0, 100)
-            if shooting_chance > 80:
-                print('Shot missed')
-            elif shooting_chance <= 80:
-                print('Shot successful')
+        # --> Achat shield
+        if price_shield:
+            if int(self.tank.money) >= int(price_shield):
+                self.tank.money -= int(price_shield)
+                self.tank.shield_selected = self.tank.choice_item(self.tank.shield_list, shield_name)
+                print('Shield :', self.tank.shield_selected)
+            else:
+                print("Vous n'avez pas assez d'argent")
 
         response.set_cookie("argent", self.tank.money)
 

@@ -24,10 +24,11 @@ def dispatch_shoot_result():
     json_as_dict = request.json
 
     LOGGER.info('emit shoot_result to Session ID [%s]', json_as_dict['src_sid'])
-    socketio.emit("shoot_result", json.dumps({"msg": "hit / miss"}), room=json_as_dict['src_sid'])
+    socketio.emit("shoot_result", json.dumps({"msg": json_as_dict['src_msg']}), room=json_as_dict['src_sid'])
 
-    LOGGER.info('emit shoot_result to Session ID [%s]', json_as_dict['target_sid'])
-    socketio.emit("shoot_result", json.dumps({"msg": "hit"}), room=json_as_dict['target_sid'])
+    if json_as_dict['target_sid']:
+        LOGGER.info('emit shoot_result to Session ID [%s]', json_as_dict['target_sid'])
+        socketio.emit("shoot_result", json.dumps({"msg": json_as_dict['target_msg']}), room=json_as_dict['target_sid'])
 
     return Response()
 

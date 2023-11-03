@@ -1,20 +1,20 @@
 [
-  {"nom": "Gun","degats": 50,"cadence": 2,"portee": 2,"durabilite": 3,
+  {"nom": "Gun","degats": 50,"cadence": 2,"portee": 2,"durabilite": 3,"precision": 80,
     "price": 300
   },
-  {"nom": "Mitraillete","degats": 30,"cadence": 50,"portee": 5,"durabilite": 7,
+  {"nom": "Mitraillete","degats": 30,"cadence": 50,"portee": 5,"durabilite": 7,"precision": 55,
     "price": 500
   },
-  {"nom": "Laser","degats": 50,"cadence": 50,"portee": 5,"durabilite": 5,
+  {"nom": "Laser","degats": 50,"cadence": 50,"portee": 5,"durabilite": 5,"precision": 65,
     "price": 3000
   },
-  {"nom": "Lances-grenades","degats": 100,"cadence": 1,"portee": 7,"durabilite": 8,
+  {"nom": "Lances-grenades","degats": 100,"cadence": 1,"portee": 7,"durabilite": 8,"precision": 90,
     "price": 1300
   },
-  {"nom": "Lances-missiles","degats": 150,"cadence": 1,"portee": 7,"durabilite": 8,
+  {"nom": "Lances-missiles","degats": 150,"cadence": 1,"portee": 7,"durabilite": 8,"precision": 60,
     "price": 1600
   },
-  {"nom": "Lances-flammes","degats": 40,"cadence": 50,"portee": 6,"durabilite": 8,
+  {"nom": "Lances-flammes","degats": 40,"cadence": 50,"portee": 6,"durabilite": 8,"precision": 60,
     "price": 1800
   }
 ]

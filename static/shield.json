@@ -1,0 +1,7 @@
+[
+  {"nom": "Shield -","valeur": 50, "price": 50},
+  {"nom": "Shield","valeur": 100, "price": 100},
+  {"nom": "Shield +","valeur": 150, "price": 200},
+  {"nom": "Shield ++","valeur": 200, "price": 300},
+  {"nom": "Shield +++","valeur": 300, "price": 400}
+]
