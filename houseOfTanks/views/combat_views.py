@@ -12,7 +12,7 @@ tid_to_tank_dict = {}
 #################################################
 from django.http import JsonResponse
 def move(request):
-    print("===> move")
+    # print("===> move")
     tank = tid_to_tank_dict[request.COOKIES.get('tid')]
     direction = request.GET.get('move')
     message = None
@@ -31,7 +31,7 @@ def move(request):
     return JsonResponse({"result": "ok"})
 
 def stop(request):
-    print("===> stop")
+    # print("===> stop")
     tank = tid_to_tank_dict[request.COOKIES.get('tid')]
     message = {"direction": "NONE"}
     tank.broker.send(destination=config["BROKER"]["MOTOR_LISTEN_TOPIC"],
@@ -39,27 +39,96 @@ def stop(request):
                 body=json.dumps(message))
     return JsonResponse({"result": "ok"})
 
+def connection(request):
+    # Connection
+    print('===> connection')
+    tank = tid_to_tank_dict[request.COOKIES.get('tid')]
+    tank.broker = stomp.Connection([(tank.ip_adress, tank.broker_port)], heartbeats=(30000, 30000))
+    tank.broker.connect(config["BROKER"]["USERNAME"], config["BROKER"]["PASSWORD"], wait=True)
+
+    # Subscribe
+    tank.broker.set_listener('broker_listener', SimpleConnectionListener(tank.broker))
+    tank.broker.subscribe("/queue/camera/action_response", 'hot_camera_subscriber')
+
+    print('===> connection started')
+
+    return JsonResponse({"txt": "Connection started"})
+
+def shot_detection_request(request):
+    print("===> Shot detection request")
+    tank = tid_to_tank_dict[request.COOKIES.get('tid')]
+    if tank.weapon_selected:
+        print('--> Envoie du message')
+        msg = 'Envoie du message'
+        message = {"none": "none"}
+        tank.broker.send(destination="/queue/camera/action_request",
+                    headers={"type": "SHOOT"},
+                    body=json.dumps(message))
+        #FIXME a supprimer
+        # shot_detection_response(None, None)
+    else:
+        print('--> Choice a weapon')
+        msg = 'Choice a weapon'
+    #TODO envoyer le message
+    return JsonResponse({"msg": msg})
+
+#TODO Buy by Ajax
 def buy_weapon(request):
+    print("===> buy_weapon")
     tank = tid_to_tank_dict[request.COOKIES.get('tid')]
     price_weapon = request.GET.get('price_weapon')
     weapon_name = request.GET.get('weapon_name')
     if int(tank.money) >= int(price_weapon):
         tank.money -= int(price_weapon)
         tank.weapon_selected = tank.choice_item(tank.weapon_list, weapon_name)
-        print('Weapon :', tank.weapon_selected)
+        print("--> Achat effectué")
+        msg = "Achat effectué"
     else:
-        print("Vous n'avez pas assez d'argent")
+        print("--> Vous n'avez pas assez d'argent")
+        msg = "Vous n'avez pas assez d'argent"
+    #TODO afficher le message
+    return JsonResponse({"msg": msg})
 
 def buy_shield(request):
+    print("===> buy_shield")
     tank = tid_to_tank_dict[request.COOKIES.get('tid')]
     price_shield = request.GET.get('price_shield')
     shield_name = request.GET.get('shield_name')
     if int(tank.money) >= int(price_shield):
         tank.money -= int(price_shield)
         tank.shield_selected = tank.choice_item(tank.shield_list, shield_name)
-        print('Shield :', tank.shield_selected)
+        print("--> Achat effectué")
+        msg = "Achat effectué"
     else:
-        print("Vous n'avez pas assez d'argent")
+        print("--> Vous n'avez pas assez d'argent")
+        msg = "Vous n'avez pas assez d'argent"
+    #TODO afficher le message
+    return JsonResponse({"msg": msg})
+
+#################################################
+# BROKER LISTENER
+#################################################
+class SimpleConnectionListener(stomp.ConnectionListener):
+    def __init__(self, connection):
+        self.conn = connection
+
+    def on_message(self, frame):
+        print("Receive message : type = [{}], message = [{}]".format(frame.headers.get('type', None), frame.body))
+        if frame.headers.get('type', None) == 'action_response':
+            shot_detection_response(frame.headers, frame.body)
+        elif frame.headers.get('type', None) == 'IMAGE':
+            print(f"received image")
+        else:
+            print(f"unknown message type ... no callback")
+
+# class SimpleConnectionListener(stomp.ConnectionListener):
+#     def __init__(self, connection, callback):
+#         self.conn = connection
+#         self.callback = callback
+#
+#     def on_message(self, frame):
+#         print("Receive message : type = [{}], message = [{}]".format(frame.headers.get('type', None), frame.body))
+#         self.callback(frame.headers, frame.body)
 
 #################################################
 # WEBSOCKET
@@ -68,76 +137,77 @@ import requests
 
 def save_websocket_sid(request):
     print("===> save_websocket_sid")
-
-    # print(type(request.COOKIES.get('tid')))
-    print(tid_to_tank_dict)
-
     tank = tid_to_tank_dict[request.COOKIES.get('tid')]
     tank.sid = request.COOKIES.get('websocket_sid')
-    print(f"SID : {tank.sid}")
+    # print(f"SID : {tank.sid}")
     return JsonResponse({"result": "ok"})
 
-def shot_detection_request(request):
-    tank = tid_to_tank_dict[request.COOKIES.get('tid')]
-    if tank.weapon_selected:
-        #TODO envoyer un message "tag" sur le broker
-        print("===> Marker detection request")
-        #FIXME a supprimer
-        shot_detection_response(request)
-    else:
-        print('===> Choice a weapon')
-    return JsonResponse({"result": "ok"})
+def shot_detection_response(headers, body): # Quand broker envoit une reponse
 
-#TODO si reponse broker
-def shot_detection_response(response_broker): # Quand broker envoit une reponse
+    # response = {
+    #     "action": 'SHOOT',
+    #     "src_tid": 1,
+    #     "target_tid": '',
+    #     "face": 0
+    # }
 
-    response = {
-        "action": 'SHOOT',
-        "src_tid": 2,
-        "target_tid": 1,
-        "face": 0
-    }
+    response = json.loads(body)
 
-    print("===> Receive tag result")
-    print(tid_to_tank_dict)
+    print("===> Receive shot tag result")
     tank = tid_to_tank_dict[str(response['src_tid'])]
 
-    # Verifie si target
+    # Verifie si il voit un tank su lequel tirer
     if response['target_tid']:
         target_tank = tid_to_tank_dict[str(response['target_tid'])]
         # Tir
         shooting_chance = random.randint(0, 100)
         if shooting_chance > tank.weapon_selected['precision']:
-            print('Shot missed')
             data = {
                 'src_sid': tank.sid,
+                'src_msg': 'Shot missed',
+                'src_pv': tank.pv,
+                'src_shield': tank.shield,
                 'target_sid': '',
-                'src_msg': 'Shot missed'
+                'target_msg': '',
+                'target_pv': '',
+                'target_shield': ''
             }
         else:
-            print('Shot successful')
+            target_tank.shield -= tank.weapon_selected['degats']
+            if target_tank.shield < 0:
+                target_tank.pv += target_tank.shield
+                target_tank.shield = 0
             data = {
                 'src_sid': tank.sid,
-                'target_sid': target_tank.sid,
                 'src_msg': 'Shot successful',
-                'target_msg': '-30'
+                'src_pv': tank.pv,
+                'src_shield': tank.shield,
+                'target_sid': target_tank.sid,
+                'target_msg': f'Degats : {tank.weapon_selected['degats']}',
+                'target_pv': target_tank.pv,
+                'target_shield': target_tank.shield
             }
+
     else:
         data = {
             'src_sid': tank.sid,
+            'src_msg': 'No tank',
+            'src_pv': tank.pv,
+            'src_shield': tank.shield,
             'target_sid': '',
-            'src_msg': 'No tank'
+            'target_msg': '',
+            'target_pv': '',
+            'target_shield': ''
         }
 
-    requests.post('http://127.0.0.1:3000/dispatch_shoot_result', json=data)
+    requests.post('http://192.168.1.45:3000/dispatch_shoot_result', json=data)
 
 #################################################
 
 def get_config():
-    config = configparser.ConfigParser()
-    config.read("static/config/config.ini")
-    return config
-
+    config_ = configparser.ConfigParser()
+    config_.read("static/config/config.ini")
+    return config_
 
 # Config
 config = get_config()
@@ -151,6 +221,7 @@ class Tank:
         self.ip_adress = None
         self.tid = None
         self.broker = None
+        self.broker_port = None
         self.sid = None
         # Ojet Tank
         self.weapon_selected = None
@@ -179,30 +250,41 @@ class Tank:
 
 class IndexView(TemplateView):
     template_name = 'combat.html'
-    tank = Tank()
 
     def get(self, request, *args, **kwargs):
+        tid = request.COOKIES.get('tid')
 
-        # Ajout du tank au dict
-        tid_to_tank_dict[self.tank.tid] = self.tank
+        if tid not in tid_to_tank_dict:
+            tank = Tank()
 
-        # Variables
-        self.tank.username = request.COOKIES.get('username')
-        self.tank.ip_adress = request.COOKIES.get('ip_adress')
-        self.tank.tid = request.COOKIES.get('tid')
-        broker_port = config["BROKER"]["PORT"]
-        print('broker_host :', self.tank.ip_adress, 'broker_port :', broker_port)
+            # Variables
+            tank.username = request.COOKIES.get('username')
+            tank.ip_adress = request.COOKIES.get('ip_adress')
+            tank.tid = request.COOKIES.get('tid')
 
-        # Connection
-        # self.tank.broker = stomp.Connection([(self.tank.ip_adress, broker_port)], heartbeats=(30000, 30000))
-        # self.tank.broker.connect(config["BROKER"]["USERNAME"], config["BROKER"]["PASSWORD"], wait=True)
+            # Ajout du tank au dict
+            tid_to_tank_dict[tank.tid] = tank
+
+            # Broker Port
+            tank.broker_port = config["BROKER"]["PORT"]
+
+        else:
+            tank = tid_to_tank_dict[tid]
+
+            # Variables
+            tank.username = request.COOKIES.get('username')
+            tank.ip_adress = request.COOKIES.get('ip_adress')
+            tank.tid = request.COOKIES.get('tid')
 
         context = {
-            "tank": self.tank,
+            "tank": tank,
         }
+
         return render(request, self.template_name, context)
 
     def post(self, request, *args, **kwargs):
+
+        tank = tid_to_tank_dict[request.COOKIES.get('tid')]
 
         # Parameters
         price_weapon = request.POST.get('price_weapon')
@@ -214,21 +296,20 @@ class IndexView(TemplateView):
 
         # --> Achat arme
         if price_weapon:
-            if int(self.tank.money) >= int(price_weapon):
-                self.tank.money -= int(price_weapon)
-                self.tank.weapon_selected = self.tank.choice_item(self.tank.weapon_list, weapon_name)
-                print('Weapon :', self.tank.weapon_selected)
+            if int(tank.money) >= int(price_weapon):
+                tank.money -= int(price_weapon)
+                tank.weapon_selected = tank.choice_item(tank.weapon_list, weapon_name)
             else:
-                print("Vous n'avez pas assez d'argent")
+                print("--> Vous n'avez pas assez d'argent")
         # --> Achat shield
         if price_shield:
-            if int(self.tank.money) >= int(price_shield):
-                self.tank.money -= int(price_shield)
-                self.tank.shield_selected = self.tank.choice_item(self.tank.shield_list, shield_name)
-                print('Shield :', self.tank.shield_selected)
+            if int(tank.money) >= int(price_shield):
+                tank.money -= int(price_shield)
+                tank.shield_selected = tank.choice_item(tank.shield_list, shield_name)
+                tank.shield += tank.shield_selected['valeur']
             else:
-                print("Vous n'avez pas assez d'argent")
+                print("--> Vous n'avez pas assez d'argent")
 
-        response.set_cookie("argent", self.tank.money)
+        response.set_cookie("argent", tank.money)
 
         return response

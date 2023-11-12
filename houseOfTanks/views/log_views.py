@@ -21,7 +21,7 @@ class LogView(TemplateView):
         # response = HttpResponse('hello')
         response = redirect("/combat")
         response.set_cookie("username", username)
-        response.set_cookie("ip", ip_adress)
+        response.set_cookie("ip_adress", ip_adress)
         response.set_cookie("tid", tid)
 
         return response

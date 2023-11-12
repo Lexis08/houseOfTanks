@@ -23,7 +23,8 @@
                 <div class="card-body">
                     <p class="card-text">Ip adress : {{ tank.ip_adress }}</p>
                     <p class="card-text">Tank ID : {{ tank.tid }}</p>
-                    <p class="card-text">Pv : {{ tank.pv }}, Shield : {{ tank.shield }}</p>
+                    <p class="card-text">Pv : <div id="pv">{{ tank.pv }}</div></p>
+                    <p class="card-text">Shield : <div id="shield">{{ tank.shield }}</div></p>
                     <table>
                         <tbody>
                         <tr>
@@ -53,7 +54,11 @@
                     </table>
                     <br>
                     <!-- Shot -->
+                    <button class="btn btn-secondary" onclick="sendConnection()">Connection</button>
+                    <br>
+                    <!-- Shot -->
                     <button class="btn btn-secondary" onclick="sendShoot()">SHOOT</button>
+                    <br>
                     <!-- Msg -->
                     <h5>Messages</h5>
                     <div id="msg"></div>
@@ -81,8 +86,6 @@
                         <tr>
                             <th>Nom</th>
                             <th>Degats</th>
-                            <th>Cadence (tir/s)</th>
-                            <th>Portée</th>
                             <th>Durabilitée</th>
                             <th>Precision</th>
                             <th>Prix</th>
@@ -94,8 +97,6 @@
                             <tr>
                                 <td>{{ weapon.nom }}</td>
                                 <td>{{ weapon.degats }}</td>
-                                <td>{{ weapon.cadence }}</td>
-                                <td>{{ weapon.portee }}</td>
                                 <td>{{ weapon.durabilite }}</td>
                                 <td>{{ weapon.precision }}</td>
                                 <td>{{ weapon.price }}</td>
@@ -133,7 +134,6 @@
                                     <td>{{ shield.valeur }}</td>
                                     <td>{{ shield.price }}</td>
                                     <td>
-                                    {% if shield.nom != tank.shield_selected.nom %}
                                     <form method="post">
                                         {% csrf_token %}
                                         <input class="form-control m-2" type="hidden"
@@ -142,7 +142,6 @@
                                                placeholder="nom" name="shield_nom" value="{{ shield.nom }}">
                                         <button class="btn btn-outline-secondary" type="submit">Buy</button>
                                     </form>
-                                    {% endif %}
                                     </td>
                                 </tr>
                             {% endfor %}
@@ -175,20 +174,24 @@
         xhr.send();
     }
 
-    function sendBuyWeapon(price_weapon, weapon_name) {
+    function sendConnection() {
         let xhr = new XMLHttpRequest();
-        xhr.open('GET', '/buy_weapon?price_weapon=' + price_weapon, '&weapon_name=' + weapon_name);
+        xhr.open('GET', '/connection');
         xhr.send();
     }
 
-    function sendBuyShield(price_shield, shield_name) {
-        let xhr = new XMLHttpRequest();
-        xhr.open('GET', '/buy_shield?price_shield=' + price_shield, '&shield_name=' + shield_name);
-        xhr.send();
-    }
+    {#function sendBuyWeapon(price_weapon, weapon_name) { #}
+    {#    let xhr = new XMLHttpRequest();#}
+    {#    xhr.open('GET', '/buy_weapon?price_weapon=' + price_weapon, '&weapon_name=' + weapon_name);#}
+    {#    xhr.send();}#}
+    {##}
+    {#function sendBuyShield(price_shield, shield_name) {#}
+    {#    let xhr = new XMLHttpRequest();#}
+    {#    xhr.open('GET', '/buy_shield?price_shield=' + price_shield, '&shield_name=' + shield_name);#}
+    {#    xhr.send();}#}
 
     // WEBSOCKET
-    const socket = io.connect("http://127.0.0.1:3000");
+    const socket = io.connect("http://192.168.1.45:3000");
     socket.on("connection", function (data) {
         const data_as_json = JSON.parse(data);
         document.cookie = "websocket_sid=" + data_as_json.sid;
@@ -201,7 +204,12 @@
         {#console.log("shoot_result : Message recu : ");#}
         {#console.log(msg);#}
         var div_msg = document.getElementById('msg');
-        div_msg.innerHTML += msg;
+        var div_pv = document.getElementById('pv');
+        var div_shield = document.getElementById('shield');
+        const msg_as_json = JSON.parse(msg);
+        div_msg.innerHTML += msg_as_json.txt + '<br>';
+        div_pv.innerHTML = msg_as_json.pv;
+        div_shield.innerHTML = msg_as_json.shield;
     });
 </script>
 </html>

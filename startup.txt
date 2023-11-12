@@ -1,7 +1,7 @@
-sudo /var/lib/robot_broker/bin/artemis run &
+(lancé au demarage) sudo /var/lib/robot_broker/bin/artemis run &
 source /home/pi/venv/bin/activate
 cd /home/pi/robot
 python3 /home/pi/robot/src/main/python/component/motor.py --debug > ~/log/motor.log 2>&1 &
+python3 src/main/python/component/hot_camera.py --tid=1 --send_img=True > ~/log/hot_camera.log 2>&1 &
 tail -f ~/log/motor.log
-
-python3 /home/pi/robot/src/main/python/component/simple_camera.py --debug > ~/log/camera.log 2>&1 &
+tail -f ~/log/hot_camera.log

@@ -22,13 +22,27 @@ clients = {}
 @app.route('/dispatch_shoot_result', methods=['POST'])
 def dispatch_shoot_result():
     json_as_dict = request.json
+    print(json_as_dict)
 
     LOGGER.info('emit shoot_result to Session ID [%s]', json_as_dict['src_sid'])
-    socketio.emit("shoot_result", json.dumps({"msg": json_as_dict['src_msg']}), room=json_as_dict['src_sid'])
+    socketio.emit("shoot_result",
+                  json.dumps({
+                      "txt": json_as_dict['src_msg'],
+                      "pv": json_as_dict['src_pv'],
+                      "shield": json_as_dict['src_shield'],
+                  }),
+                  room=json_as_dict['src_sid'])
 
     if json_as_dict['target_sid']:
+        print('===> Target sid :', json_as_dict['target_sid'], 'txt :', json_as_dict['target_msg'])
         LOGGER.info('emit shoot_result to Session ID [%s]', json_as_dict['target_sid'])
-        socketio.emit("shoot_result", json.dumps({"msg": json_as_dict['target_msg']}), room=json_as_dict['target_sid'])
+        socketio.emit("shoot_result",
+                      json.dumps({
+                          "txt": json_as_dict['target_msg'],
+                          "pv": json_as_dict['target_pv'],
+                          "shield": json_as_dict['target_shield'],
+                      }),
+                      room=json_as_dict['target_sid'])
 
     return Response()
 

@@ -18,7 +18,7 @@ from django.contrib import admin
 from django.urls import path
 from .views.combat_views import IndexView
 from .views.log_views import LogView
-from .views.combat_views import move, stop, buy_weapon, buy_shield, shot_detection_request, save_websocket_sid
+from .views.combat_views import move, stop, buy_weapon, buy_shield, shot_detection_request, connection, save_websocket_sid
 
 urlpatterns = [
     path('admin/', admin.site.urls),
@@ -30,5 +30,6 @@ urlpatterns = [
     path('buy_weapon', buy_weapon),
     path('buy_shield', buy_shield),
     path('shoot', shot_detection_request),
+    path('connection', connection),
     path('save_websocket_sid', save_websocket_sid),
 ]

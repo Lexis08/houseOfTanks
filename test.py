@@ -12,10 +12,12 @@ print('GET', '/move?move=' + move + '&tank=', tank)"""
 weapon_name = 'Gun'
 print(f'GET /buy_weapon?price_weapon={price_weapon}&weapon_name={weapon_name}')"""
 
-"""class Tank():
+
+class Tank:
 
     def __init__(self):
         self.test = 0
+
 
 tid_to_tank_dict = {
     1: Tank(),
@@ -25,16 +27,16 @@ tid_to_tank_dict = {
 response = {
         "action": 0,
         "src_tid": 1,
-        "target_tid": '',
+        "target_tid": 2,
         "face": 0
     }
 
-print("===> Receive tag result")
+print("===> Receive shot tag result")
 tank = tid_to_tank_dict[response['src_tid']]
 
 # Verifie si target
 if response['target_tid']:
     target_tank = tid_to_tank_dict[response['target_tid']]
-    print('target tank')
+    print('target tank :', target_tank)
 else:
-    print('no target')"""
+    print('no target')
